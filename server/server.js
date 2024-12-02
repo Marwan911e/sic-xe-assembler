@@ -163,18 +163,14 @@ app.post("/assemble", upload.single("file"), (req, res) => {
             code = fileContent;
             const { label, instruction, reference, locationCounter, symbolTable } = assembleSIC(code);
             res.json({ label, instruction, reference, locationCounter, symbolTable });
-            fs.unlink(req.file.path, (err) => {
-                if (err) console.error("Failed to delete file:", err);
-            });
         });
-    } else if (code) {
+    } else {
         const { label, instruction, reference, locationCounter, symbolTable } = assembleSIC(code);
         res.json({ label, instruction, reference, locationCounter, symbolTable });
-    } else {
-        return res.status(400).json({ error: "Code is required!" });
     }
 });
 
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

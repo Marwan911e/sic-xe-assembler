@@ -1,1 +1,1 @@
-# sic-assembler
+# sic/xe-assembler

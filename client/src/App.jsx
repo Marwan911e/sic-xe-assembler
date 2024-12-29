@@ -1,40 +1,39 @@
 import React, { useState } from "react";
 
 function App() {
-  const [sicCode, setSicCode] = useState(""); // Store the user input
-  const [output, setOutput] = useState([]); // Store the assembled output as an array
-  const [symbolTable, setSymbolTable] = useState([]); // Store the symbol table
-  const [programLength, setProgramLength] = useState(null); // Store the program length
-  const [loading, setLoading] = useState(false); // Track loading state
+  const [sicCode, setSicCode] = useState("");
+  const [output, setOutput] = useState([]); 
+  const [symbolTable, setSymbolTable] = useState([]); 
+  const [programLength, setProgramLength] = useState(null); 
+  const [loading, setLoading] = useState(false); 
   const [records, setRecords] = useState([]);
-  const [file, setFile] = useState(null); // Track the uploaded file
+  const [file, setFile] = useState(null); 
 
-  // Function to handle file upload and read file contents
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setSicCode(e.target.result); // Set the SIC code from file contents
+        setSicCode(e.target.result);
       };
-      reader.readAsText(file); // Read the file as text
-      setFile(file); // Store the file
+      reader.readAsText(file); 
+      setFile(file);
     }
   };
 
   // Function to send SIC code to the backend for processing
   const handleAssemble = async () => {
-    setLoading(true); // Start loading
-    setOutput([]); // Reset the output before new assembly
-    setSymbolTable([]); // Reset the symbol table before new assembly
-    setProgramLength(null); // Reset program length before new assembly
+    setLoading(true); 
+    setOutput([]); 
+    setSymbolTable([]);
+    setProgramLength(null);
 
     try {
       const response = await fetch("http://localhost:5000/assemble", {
-        // Make sure this URL matches the backend endpoint
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: sicCode }), // Send SIC code as JSON
+        body: JSON.stringify({ code: sicCode }), 
       });
 
       const data = await response.json();
@@ -47,41 +46,38 @@ function App() {
         data.locationCounter &&
         data.symbolTable &&
         data.objectCode &&
-        data.records // Ensure the records are included in the response
+        data.records
       ) {
-        // Transform the data into a table-friendly format for assembly output
+       
         const assembledOutput = data.locationCounter.map((loc, index) => ({
           locationCounter: loc,
           label: data.label[index] || "-",
           instruction: data.instruction[index] || "-",
           reference: data.reference[index] || "-",
-          objectCode: data.objectCode[index] || "-", // Add Object Code
+          objectCode: data.objectCode[index] || "-", 
         }));
-        setOutput(assembledOutput); // Update output state with the result
+        setOutput(assembledOutput); 
 
-        // Set the symbol table data
         const symbolTableData = Object.entries(data.symbolTable).map(
           ([label, location]) => ({
             label,
             location,
           })
         );
-        setSymbolTable(symbolTableData); // Update symbol table state with the result
+        setSymbolTable(symbolTableData); 
 
-        // Set the program length from the response
-        setProgramLength(data.programLength); // Set the program length
+        setProgramLength(data.programLength);
 
-        // Set the records (H, T, E records)
         const records = data.records.map((record, index) => {
           const parts = record.split("^");
           return {
-            type: parts[0], // H, T, or E
-            address: parts[1], // Address or starting address
-            length: parts[2], // Length of the record (for T records)
-            objectCode: parts.slice(3).join("^"), // The object code (only for T records)
+            type: parts[0], 
+            address: parts[1],
+            length: parts[2],
+            objectCode: parts.slice(3).join("^"), 
           };
         });
-        setRecords(records); // Store the records state
+        setRecords(records);
       } else {
         setOutput([
           {
@@ -91,7 +87,7 @@ function App() {
             reference: data.error || "Unknown error occurred",
             objectCode: "-",
           },
-        ]); // Show error message
+        ]); 
       }
     } catch (error) {
       setOutput([
@@ -104,7 +100,7 @@ function App() {
         },
       ]);
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false); 
     }
   };
 
@@ -128,7 +124,7 @@ function App() {
         className="textInput"
         placeholder="Write SIC code here or upload a file..."
         value={sicCode}
-        onChange={(e) => setSicCode(e.target.value)} // Update sicCode when user types
+        onChange={(e) => setSicCode(e.target.value)}
         disabled={loading}
       />
       <br />

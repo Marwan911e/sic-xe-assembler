@@ -37,16 +37,16 @@ a:hover {
 }
 
 .textInput:focus {
-  border-color: #4CAF50; /* Green border on focus */
-  background-color: #ffffff; /* White background when focused */
-  box-shadow: 0 4px 12px rgba(0, 200, 0, 0.2); /* Green glow effect */
-  outline: none; /* Remove the default outline */
+  border-color: #4CAF50;
+  background-color: #ffffff; 
+  box-shadow: 0 4px 12px rgba(0, 200, 0, 0.2);
+  outline: none;
 }
 
 .inputFile {
   font-size: 16px;
   padding: 12px 12px;
-  border: 2px solid #4CAF50; /* Green border */
+  border: 2px solid #4CAF50;
   border-radius: 8px;
   cursor: pointer;
   width: 100%;
@@ -55,65 +55,56 @@ a:hover {
 }
 
 .inputFile::file-selector-button {
-  background-color: #4CAF50; /* Green background for the button */
-  color: white; /* White text color */
-  font-size: 16px; /* Font size for the button */
-  padding: 10px 20px; /* Padding inside the button */
-  border: none; /* Remove the default border */
-  border-radius: 5px; /* Round the corners of the button */
-  cursor: pointer; /* Change cursor to pointer */
-  transition: background-color 0.3s ease; /* Smooth transition for background color */
+  background-color: #4CAF50;
+  color: white;
+  font-size: 16px;
+  padding: 10px 20px;
+  border: none; 
+  border-radius: 5px; 
+  cursor: pointer;
+  transition: background-color 0.3s ease; 
 }
 
 .inputFile::file-selector-button:hover {
-  background-color: #45a049; /* Darker green when hovered */
+  background-color: #45a049;
 }
 
 .inputFile::file-selector-button:focus {
-  outline: none; /* Remove outline when focused */
-  background-color: #388e3c; /* Even darker green when focused */
+  outline: none;
+  background-color: #388e3c;
 }
 
 .table-wrapper {
-  max-height: 400px; /* Set a fixed max height for the table container */
-  overflow-y: auto;  /* Enable vertical scrolling if content exceeds max-height */
+  max-height: 400px;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse; /* Ensures table borders collapse together */
-  background-color: #f9f9f9; /* Light gray background for the table */
-  border-radius: 8px; /* Rounded corners for the table */
-  overflow: hidden; /* Ensures no content overflows */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Soft shadow around the table */
+  border-collapse: collapse;
+  background-color: #f9f9f9; 
+  border-radius: 8px; 
+  overflow: hidden; 
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
 }
 
 .table th,
 .table td {
-  padding: 12px 20px; /* Padding for table cells */
-  text-align: left; /* Left-align text */
-  border-bottom: 1px solid #ddd; /* Light gray borders between rows */
+  padding: 12px 20px; 
+  text-align: left;
+  border-bottom: 1px solid #ddd; 
 }
 
 .table th {
-  background-color: #4CAF50; /* Green background for the header */
-  color: white; /* White text for headers */
-  font-weight: bold; /* Bold font for headers */
+  background-color: #4CAF50; 
+  color: white; 
+  font-weight: bold;
 }
 
 .table td {
-  background-color: #242424; /* White background for table rows */
+  background-color: #242424; 
 }
-
-/* .parentDiv{
-  display: flex;
-  flex-wrap: wrap;
-} */
-
-
-
-
 
 
 body {
@@ -136,22 +127,22 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #4CAF50; /* Green background */
-  color: white; /* White text */
+  background-color: #4CAF50;
+  color: white;
   cursor: pointer;
-  transition: border-color 0.25s, background-color 0.25s; /* Add transition for background color */
+  transition: border-color 0.25s, background-color 0.25s; 
 }
 
 button:hover {
-  background-color: #45a049; /* Darker green on hover */
-  border-color: #45a049; /* Darker border on hover */
+  background-color: #45a049; 
+  border-color: #45a049;
 }
 
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-  background-color: #388e3c; /* Even darker green when focused */
-  border-color: #388e3c; /* Darker green border when focused */
+  background-color: #388e3c; 
+  border-color: #388e3c; 
 }
 
 

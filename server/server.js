@@ -9,13 +9,12 @@ const { log } = require("console");
 const app = express();
 const PORT = 5000;
 
-// Setup for file upload using multer
-const upload = multer({ dest: "uploads/" }); // Temporary storage for uploaded files
+const upload = multer({ dest: "uploads/" });
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// Initialize OPTAB
+// opcodes table
 const OPTAB = Array(59)
   .fill(null)
   .map(() => Array(3));
@@ -82,7 +81,6 @@ function initialize() {
   OPTAB[58] = ["WD", "3", "DC"];
 }
 
-// Call initialize to populate the OPTAB
 initialize();
 
 const assemble = (code) => {
@@ -91,7 +89,7 @@ const assemble = (code) => {
   const instruction = [];
   const reference = [];
   const locationCounter = [];
-  const symbolTable = {}; // Initialize symbol table
+  const symbolTable = {};
   const objectCode = [];
   const length = locationCounter.length;
   const registerMap = {
@@ -127,13 +125,15 @@ const assemble = (code) => {
       reference.push("-");
     }
   });
-  // Initialize the startAddress (locctr) after the reference array is populated
-  let locctr = 0; // Default starting address
+
+  let locctr = 0; // the def. starting address
+
   // If reference[0] exists, use it as the starting address
   if (reference[0]) {
     locctr = parseInt(reference[0], 16);
   }
-  // Calculate the location counter and symbol table
+
+  // locctr and syboltable generation
   lines.forEach((line, index) => {
     locationCounter.push(locctr.toString(16).toUpperCase()); // Store the current location counter
 
@@ -142,14 +142,14 @@ const assemble = (code) => {
     const currentInst = instruction[index];
     const currentRef = reference[index];
 
-    // Add the label and location to the symbol table
+    // if the label not - add to symbol table
     if (currentLabel !== "-" && !symbolTable[currentLabel]) {
       symbolTable[currentLabel] = locctr.toString(16).toUpperCase();
     }
 
-    // Determine how much to increment the location counter based on the instruction
+    // Location counter generation
     if (currentInst?.startsWith("+")) {
-      locctr += 4; // Format 4 instructions
+      locctr += 4;
     } else if (currentInst === "WORD") {
       locctr += 3;
     } else if (currentInst === "RESW") {
@@ -159,19 +159,20 @@ const assemble = (code) => {
     } else if (currentInst === "BYTE") {
       const byteValue = currentRef;
       if (byteValue.startsWith("X")) {
-        locctr += Math.ceil((byteValue.length - 3) / 2); // For hexadecimal literals
+        locctr += Math.ceil((byteValue.length - 3) / 2);
       } else if (byteValue.startsWith("C")) {
-        locctr += byteValue.length - 3; // For character literals
+        locctr += byteValue.length - 3;
       }
     } else {
       const opInfo = OPTAB.find((op) => op[0] === currentInst);
       if (opInfo) {
-        locctr += parseInt(opInfo[1], 10); // Add the size based on the format from OPTAB
+        locctr += parseInt(opInfo[1], 10); // for format 1, 2, 3
       } else {
         console.warn(`Instruction not found in OPTAB: ${currentInst}`);
       }
     }
   });
+
   // Calculate the program length
   const lastLocctr = locationCounter[locationCounter.length - 1];
   const startingAddress = reference[0];
@@ -179,6 +180,7 @@ const assemble = (code) => {
   const startingAddressDecimal = parseInt(startingAddress, 16);
   const programLengthDecimal = lastLocctrDecimal - startingAddressDecimal;
   const programLength = programLengthDecimal.toString(16);
+
   function findBaseRegister() {
     let baseRegister = 0;
     for (let index = 0; index < instruction.length; index++) {
@@ -194,6 +196,7 @@ const assemble = (code) => {
     }
     return baseRegister;
   }
+
   // object code generation
   for (let index = 0; index < instruction.length; index++) {
     let obcode = null;
@@ -213,8 +216,12 @@ const assemble = (code) => {
       console.log(
         `${index}: ${currentInst} => format: ${instructionData[1]}, opcode: ${opcode}, pc = ${pc}, base = ${baseRegister}`
       );
+      // ----------------      Format 1       ---------------------------
       if (instructionData[1] === "1") {
-      } else if (instructionData[1] === "2") {
+        obcode = instructionData[2];
+      } 
+      // ----------------      Format 2       ---------------------------
+      else if (instructionData[1] === "2") {
         opcode = instructionData[2];
         if (reference[index].length == 3) {
           let reg1 = "";
@@ -228,7 +235,9 @@ const assemble = (code) => {
           let reg = registerMap[value];
           obcode = opcode + reg + "0";
         }
-      } else if (instructionData[1] === "3") {
+      } 
+      // ----------------      Format 3        ---------------------------
+      else if (instructionData[1] === "3") {
         let opcode = instructionData[2];
         let firstDigit = parseInt(opcode[0], 16);
         let secondDigit = parseInt(opcode[1], 16);
@@ -236,9 +245,10 @@ const assemble = (code) => {
         let binarySecond = secondDigit.toString(2).padStart(4, "0");
         let modifiedBinarySecond = binarySecond.slice(0, 2);
         let binaryOpcode = binaryFirst + modifiedBinarySecond;
-        if (currentInst == "RSUB"){
-            obcode = "4F0000"
-        }
+        if (currentInst == "RSUB") {
+          obcode = "4F0000";
+        } 
+      // ----------------      Format 3 # immideate       ---------------------------
         else if (reference[index].startsWith("#")) {
           let targetValue = reference[index].slice(1);
           console.log(`target value is ${targetValue}`);
@@ -260,11 +270,10 @@ const assemble = (code) => {
             obcode = hexValue + targetValue;
           } else {
             let targetAddress = symbolTable[targetValue];
-            let targetDecimal = parseInt(targetAddress, 16); // 16 indicates base 16 (hexadecimal)
+            let targetDecimal = parseInt(targetAddress, 16);
             let pcDecimal = parseInt(pc, 16);
             let dispDecimal = targetDecimal - pcDecimal;
             let dispHex = dispDecimal.toString(16).toUpperCase();
-            dispHex = dispHex.replace("-", "");
             if (-2048 <= dispDecimal && dispDecimal <= 2047) {
               let opcode = instructionData[2];
               let firstDigit = parseInt(opcode[0], 16);
@@ -291,9 +300,38 @@ const assemble = (code) => {
                 .padStart(3, "0")
                 .toUpperCase();
               obcode = hexValue + dispHex;
+            } else {
+              let opcode = instructionData[2];
+            let firstDigit = parseInt(opcode[0], 16);
+            let secondDigit = parseInt(opcode[1], 16);
+            let binaryFirst = firstDigit.toString(2).padStart(4, "0");
+            let binarySecond = secondDigit.toString(2).padStart(4, "0");
+            let modifiedBinarySecond = binarySecond.slice(0, 2);
+            let binaryOpcode = binaryFirst + modifiedBinarySecond;
+            (n = 0), (i = 1), (x = 0), (b = 1), (p = 0), (e = 0);
+            let flagbits =
+              n.toString() +
+              i.toString() +
+              x.toString() +
+              b.toString() +
+              p.toString() +
+              e.toString();
+            let opcodeAndFlagBits = binaryOpcode + flagbits;
+            let hexValue = parseInt(opcodeAndFlagBits, 2)
+              .toString(16)
+              .toUpperCase()
+              .padStart(3, "0");
+            let decimalBaseRegister = parseInt(baseRegister, 16).toString();
+            let decimalDisp = decimalTargetAddress - decimalBaseRegister;
+            let hexDisp = decimalDisp.toString(16).toUpperCase();
+            hexDisp = hexDisp.replace("-", "");
+            hexDisp = hexDisp.padStart(3, "0");
+            obcode = hexValue + hexDisp;
             }
           }
-        } else if (reference[index].startsWith("@")) {
+        } 
+      // ----------------      Format 3 @ indirect       ---------------------------
+        else if (reference[index].startsWith("@")) {
           let targetVariable = reference[index].slice(1);
           let targetAddress = symbolTable[targetVariable];
           let decimalTargetAddress = parseInt(targetAddress, 16);
@@ -341,16 +379,14 @@ const assemble = (code) => {
               .padStart(3, "0");
             let decimalBaseRegister = parseInt(baseRegister, 16).toString();
             let decimalDisp = decimalTargetAddress - decimalBaseRegister;
-            let hexDisp = (
-              decimalDisp >= 0
-                ? decimalDisp.toString(16)
-                : (0xfff + decimalDisp + 1).toString(16)
-            )
-              .toUpperCase()
-              .padStart(3, "0");
+            let hexDisp = decimalDisp.toString(16).toUpperCase();
+            hexDisp = hexDisp.replace("-", "");
+            hexDisp = hexDisp.padStart(3, "0");
             obcode = hexValue + hexDisp;
           }
-        } else if (reference[index].includes(",X")) {
+        } 
+      // ----------------      Format 3 ,X indexed       ---------------------------
+        else if (reference[index].includes(",X")) {
           let targetValue = reference[index].slice(0, -2);
           let targetAddress = symbolTable[targetValue];
           let decimalTargetAddress = parseInt(targetAddress, 16);
@@ -395,8 +431,10 @@ const assemble = (code) => {
             hexDisp = hexDisp.padStart(3, "0");
             obcode = hexValue + hexDisp;
           }
-        } else {
-            let opcode = instructionData[2];
+        } 
+      // ----------------      Format 3 normal       ---------------------------
+        else {
+          let opcode = instructionData[2];
           let firstDigit = parseInt(opcode[0], 16);
           let secondDigit = parseInt(opcode[1], 16);
           let binaryFirst = firstDigit.toString(2).padStart(4, "0");
@@ -452,7 +490,9 @@ const assemble = (code) => {
           }
         }
       }
-    } else {
+    } 
+    // ----------------      Format 4       ---------------------------
+    else {
       if (currentInst.startsWith("+")) {
         let currentInst = instruction[index].slice(1);
         let instructionData = OPTAB.find((op) => op[0] === currentInst);
@@ -463,6 +503,7 @@ const assemble = (code) => {
         let binarySecond = secondDigit.toString(2).padStart(4, "0");
         let modifiedBinarySecond = binarySecond.slice(0, 2);
         let binaryOpcode = binaryFirst + modifiedBinarySecond;
+    // ----------------      Format 4  immideate      ---------------------------
         if (currentRef.startsWith("#")) {
           (n = 0), (i = 1), (x = 0), (b = 0), (p = 0), (e = 1);
           let flagbits =
@@ -491,7 +532,9 @@ const assemble = (code) => {
             hexAddress = hexAddress.padStart(5, "0");
             obcode = hexValue + hexAddress;
           }
-        } else {
+        } 
+        // ----------------      Format 4  normal      ---------------------------
+        else {
           (n = 1), (i = 1), (x = 0), (b = 0), (p = 0), (e = 1);
           let flagbits =
             n.toString() +
@@ -505,10 +548,8 @@ const assemble = (code) => {
             .toString(16)
             .toUpperCase()
             .padStart(3, "0");
-          let address = symbolTable[reference[index]]; // Assume this is a hexadecimal value as a string, e.g., "1A3"
-          // Convert the address to a number (parse it as a hexadecimal)
+          let address = symbolTable[reference[index]];
           let decimalAddress = parseInt(address, 16);
-          // Convert the number back to hexadecimal with padding to ensure it is 5 digits
           let paddedAddress = decimalAddress
             .toString(16)
             .toUpperCase()
@@ -519,7 +560,7 @@ const assemble = (code) => {
         obcode = "No Object code";
       } else if (currentInst === "WORD") {
         obcode = reference[index];
-        objectCode.push(opcode)
+        objectCode.push(opcode);
       } else if (currentInst === "BYTE") {
         let opcode = "";
         if (reference[index].startsWith("X")) {
@@ -546,8 +587,108 @@ const assemble = (code) => {
       objectCode.push(obcode);
     }
   }
-  // HTE record
-  
+
+
+  // HTE record generation
+  function generateRecords() {
+    const records = [];
+    let headerRecord = "";
+    let textRecords = []; 
+    let endRecord = "";
+
+    
+    const programName = label[0];
+    const startingAddress = reference[0]?.padStart(6, "0") || "000000";
+    const programLength =
+      locationCounter[locationCounter.length - 1]?.padStart(6, "0") || "000000";
+
+    
+    headerRecord = `H^${programName.padEnd(
+      6,
+      " "
+    )}^${startingAddress}^${programLength}`;
+
+    let currentTextRecord = { startAddress: "", objectCodes: "" }; 
+    let currentTextLength = 0;
+
+    // Process each instruction
+    for (let i = 0; i < instruction.length; i++) {
+      const currentInst = instruction[i];
+      const currentObCode = objectCode[i];
+      const currentLoc = locationCounter[i];
+
+      
+      if (currentInst == "RESW" || currentInst == "RESB") { // skip resw & resb
+        if (currentTextLength > 0) {
+          textRecords.push(
+            `T^${currentTextRecord.startAddress}^${(currentTextLength / 2)
+              .toString(16)
+              .padStart(2, "0")
+              .toUpperCase()}^${currentTextRecord.objectCodes}`
+          );
+        }
+        // Reset for next T record
+        currentTextRecord = {
+          startAddress: currentLoc.padStart(6, "0"),
+          objectCodes: "",
+        };
+        currentTextLength = 0;
+        continue;
+      }
+
+      // Skip START, BASE, END
+      if (
+        currentInst == "START" ||
+        currentInst == "BASE" ||
+        currentInst == "END"
+      ) {
+        continue;
+      }
+
+      // if <= 60 hex digits thats = 30 bytes continue
+      if (currentTextLength + currentObCode.length <= 60) {
+        if (currentTextRecord.startAddress === "") {
+          currentTextRecord.startAddress = currentLoc.padStart(6, "0");
+        }
+        currentTextRecord.objectCodes += currentObCode;
+        currentTextLength += currentObCode.length;
+      } else {
+        // push the t record if size > 60 hex digits then reset
+        textRecords.push(
+          `T^${currentTextRecord.startAddress}^${(currentTextLength / 2)
+            .toString(16)
+            .padStart(2, "0")
+            .toUpperCase()}^${currentTextRecord.objectCodes}`
+        );
+        currentTextRecord = {
+          startAddress: currentLoc.padStart(6, "0"),
+          objectCodes: currentObCode,
+        };
+        currentTextLength = currentObCode.length;
+      }
+    }
+
+    // Push the last T record if there are any remaining object codes
+    if (currentTextLength > 0) {
+      textRecords.push(
+        `T^${currentTextRecord.startAddress}^${(currentTextLength / 2)
+          .toString(16)
+          .padStart(2, "0")
+          .toUpperCase()}^${currentTextRecord.objectCodes}`
+      );
+    }
+
+    // make end record
+    endRecord = `E^${startingAddress}`;
+
+    // combine all h t e records
+    records.push(headerRecord, ...textRecords, endRecord);
+    console.log(records);
+
+    return records;
+  }
+
+  const records = generateRecords();
 
   return {
     label,
@@ -557,6 +698,7 @@ const assemble = (code) => {
     symbolTable,
     programLength,
     objectCode,
+    records,
   };
 };
 
@@ -578,7 +720,7 @@ app.post("/assemble", upload.single("file"), (req, res) => {
   } else {
     const assemblyResult = assemble(code);
 
-    res.json(assemblyResult); // Send result back to client
+    res.json(assemblyResult); 
   }
 });
 

@@ -6,6 +6,7 @@ function App() {
   const [symbolTable, setSymbolTable] = useState([]); // Store the symbol table
   const [programLength, setProgramLength] = useState(null); // Store the program length
   const [loading, setLoading] = useState(false); // Track loading state
+  const [records, setRecords] = useState([]);
   const [file, setFile] = useState(null); // Track the uploaded file
 
   // Function to handle file upload and read file contents
@@ -30,6 +31,7 @@ function App() {
 
     try {
       const response = await fetch("http://localhost:5000/assemble", {
+        // Make sure this URL matches the backend endpoint
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: sicCode }), // Send SIC code as JSON
@@ -44,7 +46,8 @@ function App() {
         data.reference &&
         data.locationCounter &&
         data.symbolTable &&
-        data.objectCode
+        data.objectCode &&
+        data.records // Ensure the records are included in the response
       ) {
         // Transform the data into a table-friendly format for assembly output
         const assembledOutput = data.locationCounter.map((loc, index) => ({
@@ -67,6 +70,18 @@ function App() {
 
         // Set the program length from the response
         setProgramLength(data.programLength); // Set the program length
+
+        // Set the records (H, T, E records)
+        const records = data.records.map((record, index) => {
+          const parts = record.split("^");
+          return {
+            type: parts[0], // H, T, or E
+            address: parts[1], // Address or starting address
+            length: parts[2], // Length of the record (for T records)
+            objectCode: parts.slice(3).join("^"), // The object code (only for T records)
+          };
+        });
+        setRecords(records); // Store the records state
       } else {
         setOutput([
           {
@@ -122,76 +137,76 @@ function App() {
         {/* Button text based on loading state */}
       </button>
 
-      <h2 style={{textAlign: "center"}}>Assmbled Code</h2>
+      <h2 style={{ textAlign: "center" }}>Assmbled Code</h2>
 
       {/* Render the assembly output as a table */}
       {output.length > 0 && (
         <div className="table-wrapper">
-        <table
-          className="table"
-          border="1"
-          style={{
-            borderCollapse: "collapse",
-            width: "100%",
-            marginTop: "20px",
-          }}
-        >
-          <thead>
-            <tr>
-              <th>Location Counter</th>
-              <th>Label</th>
-              <th>Instruction</th>
-              <th>Reference</th>
-              <th>Object Code</th> {/* New Object Code column */}
-            </tr>
-          </thead>
-          <tbody>
-            {output.map((row, index) => (
-              <tr key={index}>
-                <td>{row.locationCounter}</td>
-                <td>{row.label}</td>
-                <td>{row.instruction}</td>
-                <td>{row.reference}</td>
-                <td>{row.objectCode}</td> {/* Display Object Code */}
+          <table
+            className="table"
+            border="1"
+            style={{
+              borderCollapse: "collapse",
+              width: "100%",
+              marginTop: "20px",
+            }}
+          >
+            <thead>
+              <tr>
+                <th>Location Counter</th>
+                <th>Label</th>
+                <th>Instruction</th>
+                <th>Reference</th>
+                <th>Object Code</th> {/* New Object Code column */}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {output.map((row, index) => (
+                <tr key={index}>
+                  <td>{row.locationCounter}</td>
+                  <td>{row.label}</td>
+                  <td>{row.instruction}</td>
+                  <td>{row.reference}</td>
+                  <td>{row.objectCode}</td> {/* Display Object Code */}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
       {/* Display a message if no output is available */}
       {output.length === 0 && !loading && <p>No output to display.</p>}
 
-      <h2 style={{textAlign: "center"}}>Symbol Table</h2>
+      <h2 style={{ textAlign: "center" }}>Symbol Table</h2>
 
       {/* Render the symbol table as a table */}
       {symbolTable.length > 0 && (
         <div className="table-wrapper">
-        <table
-          border="1"
-          style={{
-            borderCollapse: "collapse",
-            width: "100%",
-            marginTop: "20px",
-          }}
-          className="table"
-        >
-          <thead>
-            <tr>
-              <th>Label</th>
-              <th>Location</th>
-            </tr>
-          </thead>
-          <tbody>
-            {symbolTable.map((row, index) => (
-              <tr key={index}>
-                <td>{row.label}</td>
-                <td>{row.location}</td>
+          <table
+            border="1"
+            style={{
+              borderCollapse: "collapse",
+              width: "100%",
+              marginTop: "20px",
+            }}
+            className="table"
+          >
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Location</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {symbolTable.map((row, index) => (
+                <tr key={index}>
+                  <td>{row.label}</td>
+                  <td>{row.location}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -201,7 +216,28 @@ function App() {
       )}
 
       {/* Display the program length */}
-      {programLength !== null && <h3 style={{textAlign: "center"}}>Program Length: {programLength}</h3>}
+      {programLength !== null && (
+        <h3 style={{ textAlign: "center" }}>Program Length: {programLength}</h3>
+      )}
+
+     
+  {records.length > 0 && (
+  <div className="records-wrapper" style={{ marginTop: "20px" }}>
+    {records.map((record, index) => {
+      return (
+        <div key={index} style={{ marginBottom: "10px" }}>
+          <pre>
+            {record.type}^
+            {record.address && record.type !== "E" ? `${record.address}^` : `${record.address}`}
+            {record.length && record.type !== "E" ? `${record.length}^` : ""}
+            {record.objectCode}
+          </pre>
+        </div>
+      );
+    })}
+  </div>
+)}
+
     </div>
   );
 }

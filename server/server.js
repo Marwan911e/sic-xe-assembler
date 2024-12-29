@@ -128,7 +128,7 @@ const assemble = (code) => {
 
   let locctr = 0; // the def. starting address
 
-  // If reference[0] exists, use it as the starting address
+  
   if (reference[0]) {
     locctr = parseInt(reference[0], 16);
   }

@@ -2,13 +2,12 @@ import React, { useState } from "react";
 
 function App() {
   const [sicCode, setSicCode] = useState("");
-  const [output, setOutput] = useState([]); 
-  const [symbolTable, setSymbolTable] = useState([]); 
-  const [programLength, setProgramLength] = useState(null); 
-  const [loading, setLoading] = useState(false); 
+  const [output, setOutput] = useState([]);
+  const [symbolTable, setSymbolTable] = useState([]);
+  const [programLength, setProgramLength] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState([]);
-  const [file, setFile] = useState(null); 
-
+  const [file, setFile] = useState(null);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -17,15 +16,15 @@ function App() {
       reader.onload = (e) => {
         setSicCode(e.target.result);
       };
-      reader.readAsText(file); 
+      reader.readAsText(file);
       setFile(file);
     }
   };
 
   // Function to send SIC code to the backend for processing
   const handleAssemble = async () => {
-    setLoading(true); 
-    setOutput([]); 
+    setLoading(true);
+    setOutput([]);
     setSymbolTable([]);
     setProgramLength(null);
 
@@ -33,7 +32,7 @@ function App() {
       const response = await fetch("http://localhost:5000/assemble", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: sicCode }), 
+        body: JSON.stringify({ code: sicCode }),
       });
 
       const data = await response.json();
@@ -48,15 +47,14 @@ function App() {
         data.objectCode &&
         data.records
       ) {
-       
         const assembledOutput = data.locationCounter.map((loc, index) => ({
           locationCounter: loc,
           label: data.label[index] || "-",
           instruction: data.instruction[index] || "-",
           reference: data.reference[index] || "-",
-          objectCode: data.objectCode[index] || "-", 
+          objectCode: data.objectCode[index] || "-",
         }));
-        setOutput(assembledOutput); 
+        setOutput(assembledOutput);
 
         const symbolTableData = Object.entries(data.symbolTable).map(
           ([label, location]) => ({
@@ -64,17 +62,17 @@ function App() {
             location,
           })
         );
-        setSymbolTable(symbolTableData); 
+        setSymbolTable(symbolTableData);
 
         setProgramLength(data.programLength);
 
         const records = data.records.map((record, index) => {
           const parts = record.split("^");
           return {
-            type: parts[0], 
+            type: parts[0],
             address: parts[1],
             length: parts[2],
-            objectCode: parts.slice(3).join("^"), 
+            objectCode: parts.slice(3).join("^"),
           };
         });
         setRecords(records);
@@ -87,7 +85,7 @@ function App() {
             reference: data.error || "Unknown error occurred",
             objectCode: "-",
           },
-        ]); 
+        ]);
       }
     } catch (error) {
       setOutput([
@@ -95,12 +93,12 @@ function App() {
           locationCounter: "-",
           label: "Error",
           instruction: "Error",
-          reference: "Failed to connect to server. Please try again.",
+          reference: "Error",
           objectCode: "-",
         },
       ]);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -216,24 +214,26 @@ function App() {
         <h3 style={{ textAlign: "center" }}>Program Length: {programLength}</h3>
       )}
 
-     
-  {records.length > 0 && (
-  <div className="records-wrapper" style={{ marginTop: "20px" }}>
-    {records.map((record, index) => {
-      return (
-        <div key={index} style={{ marginBottom: "10px" }}>
-          <pre>
-            {record.type}^
-            {record.address && record.type !== "E" ? `${record.address}^` : `${record.address}`}
-            {record.length && record.type !== "E" ? `${record.length}^` : ""}
-            {record.objectCode}
-          </pre>
+      {records.length > 0 && (
+        <div className="records-wrapper" style={{ marginTop: "20px" }}>
+          {records.map((record, index) => {
+            return (
+              <div key={index} style={{ marginBottom: "10px" }}>
+                <pre>
+                  {record.type}^
+                  {record.address && record.type !== "E"
+                    ? `${record.address}^`
+                    : `${record.address}`}
+                  {record.length && record.type !== "E"
+                    ? `${record.length}^`
+                    : ""}
+                  {record.objectCode}
+                </pre>
+              </div>
+            );
+          })}
         </div>
-      );
-    })}
-  </div>
-)}
-
+      )}
     </div>
   );
 }

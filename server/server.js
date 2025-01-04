@@ -145,7 +145,7 @@ const assemble = (code) => {
     // if the label not - add to symbol table
     if (currentLabel !== "-" && !symbolTable[currentLabel]) {
       symbolTable[currentLabel] = locctr.toString(16).toUpperCase();
-    }
+    } 
 
     // Location counter generation
     if (currentInst?.startsWith("+")) {
